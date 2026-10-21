@@ -1,0 +1,1157 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Notas de pedido MyA</title>
+<style>
+@font-face { font-family:'Gotham'; src:url(data:font/ttf;base64,{{FONT_REG}}) format('truetype'); font-weight:400; font-display:swap; }
+@font-face { font-family:'Gotham'; src:url(data:font/otf;base64,{{FONT_BOLD}}) format('opentype'); font-weight:700; font-display:swap; }
+:root {
+  --brand:#004F9E; --brand-600:#003B78; --brand-700:#002F60; --brand-400:#1A6FC4;
+  --bg:#F6F7F9; --surface:#FFFFFF; --surface-2:#F2F4F5; --border:#E3E4E6; --border-strong:#CACBCC;
+  --ink:#1A1A1A; --ink-soft:#5F6368; --ink-faint:#6B7075; --tint:#EAF1F9;
+  --red:#D13438; --red-bg:#FDF3F4; --red-border:#F1C3C5; --link:#004F9E; --warn-bg:#FFF6E5; --warn-ink:#7A4A00;
+  --shadow-sm:0 1px 2px rgba(16,24,40,.06); --shadow-md:0 6px 16px rgba(16,24,40,.12);
+  color-scheme:light dark;
+}
+@media (prefers-color-scheme:dark) {
+  :root {
+    --bg:#0F1318; --surface:#171C23; --surface-2:#1F252E; --border:#2A313B; --border-strong:#3A424E;
+    --ink:#E8EBEF; --ink-soft:#A3ABB6; --ink-faint:#8C95A3; --tint:rgba(26,111,196,.18); --link:#6CB0F5;
+    --red:#F1707A; --red-bg:rgba(209,52,56,.12); --red-border:rgba(241,112,122,.4); --warn-bg:rgba(239,135,2,.12); --warn-ink:#FFB257;
+    --shadow-sm:none; --shadow-md:0 6px 16px rgba(0,0,0,.5);
+  }
+}
+* { box-sizing:border-box; }
+html { -webkit-text-size-adjust:100%; }
+body { margin:0; background:var(--bg); color:var(--ink); font:400 14px/1.5 'Gotham','Segoe UI',system-ui,sans-serif; }
+::selection { background:var(--tint); color:var(--ink); }
+.skip { position:absolute; left:-9999px; top:8px; background:var(--surface); color:var(--link); padding:8px 12px; border-radius:6px; z-index:20; }
+.skip:focus { left:8px; }
+:focus-visible { outline:2px solid var(--link); outline-offset:2px; }
+.top :focus-visible { outline-color:#fff; }
+.sr { position:absolute; left:-9999px; }
+
+/* Barra superior */
+.top { position:sticky; top:0; z-index:10; background:var(--brand-700); color:#fff; box-shadow:var(--shadow-md); }
+.top-in { max-width:1180px; margin:0 auto; padding:10px 24px; display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+.marca { display:flex; align-items:center; gap:10px; margin-right:auto; }
+.marca img { width:44px; height:44px; }
+.marca b { font-size:17px; }
+.marca span { display:block; font-size:12px; color:#C9D6E6; }
+.tabs { display:flex; background:rgba(255,255,255,.1); border-radius:20px; padding:3px; }
+.tabs button { border:0; background:transparent; color:#fff; font:inherit; font-weight:700; padding:8px 16px; min-height:40px; border-radius:20px; cursor:pointer; }
+.tabs button[aria-selected="true"] { background:#fff; color:var(--brand-700); }
+.acciones { display:flex; gap:8px; align-items:center; }
+.btn { font:inherit; font-weight:700; border-radius:6px; padding:9px 16px; min-height:40px; cursor:pointer; border:1px solid transparent; display:inline-flex; align-items:center; gap:8px; transition:background .15s ease-out; }
+.btn svg { width:18px; height:18px; flex:none; }
+.btn-pri { background:#fff; color:var(--brand-700); }
+.btn-pri:hover { background:var(--tint); }
+.btn-sec { background:transparent; color:#fff; border-color:rgba(255,255,255,.45); }
+.btn-sec:hover { background:rgba(255,255,255,.1); }
+.guardado { color:var(--ink-faint); }
+
+/* Contenido */
+main { max-width:1180px; margin:0 auto; padding:24px 24px 64px; }
+.titulo { display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; margin:0 0 16px; }
+.titulo h1 { font-size:24px; line-height:1.2; margin:0; }
+.ayuda-nota { margin:-8px 0 16px; color:var(--ink-soft); font-size:13px; }
+.btn-ghost { background:var(--surface); color:var(--link); border-color:var(--border-strong); }
+.btn-ghost:hover { background:var(--tint); }
+.req-mark { color:var(--red); font-weight:700; }
+
+.errores { display:none; background:var(--red-bg); border:1px solid var(--red-border); border-radius:10px; padding:14px 18px; margin:0 0 16px; }
+.errores.on { display:block; }
+.errores h2 { margin:0 0 6px; font-size:15px; color:var(--red); }
+.errores ul { margin:0; padding-left:18px; columns:2; column-gap:32px; }
+.errores li { font-size:13px; break-inside:avoid; }
+.errores a { color:var(--red); }
+
+.panel { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:18px 20px 20px; margin:0 0 16px; box-shadow:var(--shadow-sm); }
+.panel > h2 { font-size:16px; margin:0 0 12px; line-height:1.2; }
+.panel > .ayuda { margin:-8px 0 12px; font-size:13px; color:var(--ink-soft); }
+.grid { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:12px 16px; }
+.f { display:flex; flex-direction:column; gap:4px; min-width:0; }
+.f[hidden] { display:none; }
+.f.s1 { grid-column:span 1; } .f.s2 { grid-column:span 2; } .f.s3 { grid-column:span 3; } .f.s4 { grid-column:1 / -1; }
+.f > label, .f > .lbl { font-size:13px; font-weight:700; color:var(--ink); }
+.f .hint { font-size:12px; color:var(--ink-faint); }
+.f .err { font-size:12px; color:var(--red); display:none; }
+.f.invalid .err { display:block; }
+input, select { font:inherit; font-size:14px; color:var(--ink); background:var(--surface); border:1px solid var(--border-strong); border-radius:6px; padding:8px 10px; min-height:40px; width:100%; }
+input:hover, select:hover { border-color:#9DA1A6; }
+input:disabled, input:disabled:hover { background:var(--surface-2); border-color:var(--border); color:var(--ink-faint); cursor:not-allowed; text-align:center; }
+input:focus, select:focus { outline:2px solid var(--link); outline-offset:0; border-color:var(--link); }
+.f.invalid input, .f.invalid select { border-color:var(--red); background:var(--red-bg); }
+.f.invalid .opciones { border-color:var(--red); background:var(--red-bg); padding:6px 8px; }
+input[type=number] { font-variant-numeric:tabular-nums; }
+.money { position:relative; }
+.money::before { content:'$'; position:absolute; left:10px; top:50%; transform:translateY(-50%); color:var(--ink-faint); pointer-events:none; }
+.money input { padding-left:24px; text-align:right; }
+.opciones { display:flex; flex-wrap:wrap; gap:6px 18px; padding:6px 0; border-radius:6px; border:1px solid transparent; }
+.opciones label { display:inline-flex; align-items:center; gap:8px; font-size:14px; min-height:32px; cursor:pointer; }
+.opciones input, .chk input { width:18px; height:18px; min-height:0; margin:0; accent-color:var(--brand); flex:none; }
+.f.f-chk { justify-content:flex-end; }
+.chk { display:inline-flex; align-items:center; gap:10px; min-height:40px; font-weight:700; font-size:13px; cursor:pointer; }
+
+/* Tabla de productos */
+.prod-wrap { overflow-x:auto; }
+table.prod { width:100%; border-collapse:collapse; font-variant-numeric:tabular-nums; min-width:720px; }
+.prod th { text-align:left; font-size:12px; color:var(--ink-faint); font-weight:700; padding:8px 6px; border-bottom:2px solid var(--border); background:var(--surface-2); }
+.prod th.r, .prod td.r { text-align:right; }
+.prod td { padding:6px; border-bottom:1px solid var(--border); vertical-align:top; }
+.prod td.sub { padding-top:16px; font-weight:700; white-space:nowrap; }
+.prod .w-cod { width:130px; } .prod .w-cant { width:80px; } .prod .w-pu { width:160px; } .prod .w-sub { width:150px; } .prod .w-x { width:52px; }
+.prod tfoot td { border-bottom:0; padding-top:12px; font-size:15px; }
+.prod tfoot .tot { font-size:22px; font-weight:700; }
+.prod td.invalid input { border-color:var(--red); background:var(--red-bg); }
+.btn-ico { width:40px; height:40px; border-radius:6px; border:1px solid var(--border); background:var(--surface); color:var(--ink-soft); cursor:pointer; display:inline-flex; align-items:center; justify-content:center; }
+.btn-ico:hover { color:var(--red); border-color:var(--red); }
+.btn-ico svg { width:18px; height:18px; }
+.btn-add { margin-top:12px; background:var(--surface); color:var(--link); border:1px solid var(--border-strong); }
+.btn-add:hover { background:var(--tint); }
+.prod-err { color:var(--red); font-size:12px; margin:8px 0 0; display:none; }
+.prod-err.on { display:block; }
+
+.resumen { margin-top:12px; padding:12px 14px; background:var(--surface-2); border-radius:6px; font-size:14px; color:var(--ink-soft); font-variant-numeric:tabular-nums; }
+.res-fila { display:flex; gap:8px 28px; flex-wrap:wrap; align-items:baseline; }
+.resumen b { color:var(--ink); font-size:16px; }
+.resumen small { font-size:13px; }
+.aviso { margin:10px 0 0; padding:8px 12px; border-radius:6px; background:var(--warn-bg); color:var(--warn-ink); font-size:13px; font-weight:700; }
+.final { display:flex; justify-content:flex-end; margin-top:8px; }
+.btn-main { background:var(--brand); color:#fff; min-height:48px; padding:12px 22px; font-size:15px; }
+.btn-main:hover { background:var(--brand-600); }
+.notas-tabla { width:100%; border-collapse:collapse; font-size:13px; font-variant-numeric:tabular-nums; margin:0 0 16px; }
+.notas-tabla th { text-align:left; font-size:12px; color:var(--ink-faint); padding:6px 8px; border-bottom:2px solid var(--border); }
+.notas-tabla td { padding:8px; border-bottom:1px solid var(--border); vertical-align:middle; }
+.notas-tabla td.r { text-align:right; white-space:nowrap; }
+.notas-tabla .btn { min-height:36px; padding:6px 12px; }
+.notas-vacio { margin:0 0 16px; padding:16px; background:var(--surface-2); border-radius:6px; color:var(--ink-soft); }
+.dlg-ancho { max-width:760px; width:calc(100% - 32px); }
+.dlg-ancho .lista { max-height:60vh; overflow:auto; }
+.cargos { width:100%; border-collapse:collapse; font-size:13px; margin-top:14px; }
+.cargos th { text-align:left; font-size:12px; color:var(--ink-faint); padding:6px 8px; border-bottom:2px solid var(--border); background:var(--surface-2); }
+.cargos td { padding:8px; border-bottom:1px solid var(--border); vertical-align:top; }
+.cargos td:first-child { color:var(--ink-soft); max-width:560px; }
+.cargos .t { font-weight:700; color:var(--ink); display:block; margin-bottom:2px; }
+
+dialog { border:0; border-radius:10px; padding:20px 22px; max-width:420px; box-shadow:var(--shadow-md); color:var(--ink); background:var(--surface); }
+dialog::backdrop { background:rgba(0,20,40,.45); }
+dialog h2 { font-size:17px; margin:0 0 8px; }
+dialog p { margin:0 0 16px; color:var(--ink-soft); }
+dialog .fila { display:flex; justify-content:flex-end; gap:8px; }
+dialog .btn-sec { color:var(--ink); border-color:var(--border-strong); }
+dialog .btn-sec:hover { background:var(--surface-2); }
+dialog .btn-danger { background:#D13438; color:#fff; }
+.formatos { display:grid; gap:10px; margin:0 0 16px; }
+.formatos .btn { justify-content:flex-start; text-align:left; min-height:60px; padding:10px 14px; background:var(--surface); color:var(--ink); border-color:var(--border-strong); }
+.formatos .btn:hover { background:var(--tint); }
+.formatos .btn.pref { border:2px solid var(--link); }
+.formatos .btn svg { width:24px; height:24px; color:var(--link); }
+.formatos small { display:block; font-weight:400; font-size:12px; color:var(--ink-soft); }
+.generando { position:fixed; inset:0; z-index:40; display:flex; align-items:center; justify-content:center; background:rgba(0,20,40,.55); }
+.generando[hidden] { display:none; }
+.generando div { background:var(--surface); color:var(--ink); padding:16px 22px; border-radius:10px; font-weight:700; box-shadow:var(--shadow-md); }
+.toast { position:fixed; left:50%; bottom:24px; transform:translate(-50%, 20px); opacity:0; background:var(--ink); color:var(--surface); padding:10px 16px; border-radius:6px; font-size:13px; transition:opacity .2s ease-out, transform .2s ease-out; pointer-events:none; z-index:30; }
+.toast.on { opacity:1; transform:translate(-50%, 0); }
+
+@media (max-width:860px) {
+  .grid { grid-template-columns:repeat(2, minmax(0,1fr)); }
+  .f.s3, .f.s4 { grid-column:1 / -1; }
+  .errores ul { columns:1; }
+}
+@media (max-width:640px) {
+  .top { position:static; }
+  .top-in { padding:10px 16px; gap:10px; }
+  .tabs { width:100%; } .tabs button { flex:1; }
+  .acciones { flex-wrap:wrap; } .acciones .btn { flex:1 1 40%; justify-content:center; }
+  .final .btn { width:100%; justify-content:center; }
+  main { padding:16px 16px 48px; }
+  .grid { grid-template-columns:1fr; }
+  .f.s1, .f.s2, .f.s3, .f.s4 { grid-column:1 / -1; }
+  input, select { font-size:16px; }
+  .acciones { width:100%; } .acciones .btn { flex:1; justify-content:center; }
+}
+@media (prefers-reduced-motion:reduce) { * { transition:none !important; } }
+
+/* ---------- Hoja impresa (A4): calcada de los talonarios de papel ---------- */
+#hoja { display:none; }
+/* margen 0: así el navegador no imprime fecha, título ni la ruta del archivo; el margen va adentro de #hoja */
+@page { size:A4; margin:0; }
+@media print {
+  :root { color-scheme:light; }
+  body { background:#fff; }
+  .top, main, .toast, dialog, .skip { display:none !important; }
+  #hoja { display:block; }
+}
+#hoja { width:210mm; padding:8mm 9mm 6mm; color:#1A1A1A; background:#fff; font:400 9.5pt/1.2 'Gotham','Segoe UI',sans-serif; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+#hoja { overflow:hidden; }
+#hoja.captura { display:block; position:absolute; left:0; top:0; height:297mm; z-index:-1; }
+#hoja .p-cab { display:grid; grid-template-columns:54mm 1fr 60mm; gap:5mm; align-items:start; }
+#hoja .p-logo { text-align:center; }
+#hoja .p-logo img { width:24mm; height:24mm; display:block; margin:0 auto 1.5mm; }
+#hoja .p-logo b { font-size:9.3pt; white-space:nowrap; }
+#hoja .p-tit { border:1.3pt solid #2B3045; border-radius:4mm; background:#C8CDDF; text-align:center; padding:3mm 5mm 4mm; color:#1D2240; }
+#hoja .p-tit b { display:block; font-size:15pt; line-height:1.05; text-transform:uppercase; white-space:nowrap; letter-spacing:-.01em; }
+#hoja .p-tit .c { margin:3mm 4mm 0; font-size:11pt; font-weight:700; }
+#hoja .p-meta .c { min-height:6.2mm; }
+#hoja .p-meta .lb { font-size:7.8pt; font-weight:700; text-transform:uppercase; }
+#hoja .p-meta .v::before, #hoja .p-meta .v::after { display:none; }
+/* Campo: etiqueta + línea con topes en las puntas, como el papel */
+#hoja .c { display:flex; align-items:flex-end; gap:1.5mm; min-height:6.4mm; }
+#hoja .lb { white-space:nowrap; }
+#hoja .v { flex:1; min-width:0; min-height:4.4mm; border-bottom:.6pt solid #3C3F4A; padding:0 1.5mm .3mm; position:relative; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+#hoja .v::before, #hoja .v::after { content:''; position:absolute; bottom:0; width:.6pt; height:2mm; background:#3C3F4A; }
+#hoja .v::before { left:0; } #hoja .v::after { right:0; }
+#hoja .v.sin::before, #hoja .v.sin::after { display:none; }
+#hoja .par { display:flex; gap:3mm; } #hoja .par > .c { flex:1; } #hoja .par > .c.ang { flex:0 0 32%; }
+#hoja .filas { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); column-gap:6mm; }
+#hoja .filas > *, #hoja .par > * { min-width:0; }
+#hoja .filas.lb30 > .c > .lb, #hoja .filas.lb30 > .par:not(.libre) > .c:first-child > .lb { min-width:var(--lw, 33mm); }
+#hoja .par > .c.mid { flex:0 0 46%; } #hoja .par > .c.ancho { flex:1.8; } #hoja .par.libre .v { padding:0 .6mm; }
+#hoja .v:has(.ops) { padding:0 .6mm; }
+#hoja .p-area { display:flex; gap:4mm; margin-top:2mm; font-weight:700; font-size:8.5pt; }
+#hoja .p-area > .c:first-child { flex:1.5; } #hoja .p-area > .c:last-child { flex:1; }
+#hoja .p-area.lejos { margin-top:24mm; }
+#hoja .regla { border-top:1pt solid #2B3045; margin-top:2mm; }
+#hoja .ops { display:flex; justify-content:space-between; font-weight:400; }
+#hoja .ops span { display:inline-flex; align-items:center; gap:.6mm; text-transform:uppercase; font-size:7.1pt; }
+#hoja .dims { display:flex; gap:12mm; font-weight:400; text-transform:uppercase; font-size:8.3pt; }
+#hoja .dims b { font-weight:700; text-transform:none; font-size:9.5pt; }
+#hoja.compacto { font-size:8.6pt; padding:5mm 8mm 3mm; }
+#hoja.compacto .c { min-height:4.7mm; }
+#hoja.compacto .p-cab { margin-bottom:-1mm; }
+#hoja.compacto .p-tit { padding:2.2mm 5mm 3mm; }
+#hoja.compacto .p-logo img { width:21mm; height:21mm; }
+#hoja.compacto .p-cond { padding:.6mm 3mm 1mm; }
+#hoja.compacto .p-cond .c { min-height:4.6mm; }
+#hoja.compacto .p-pie { margin-top:1.5mm; }
+#hoja.compacto .p-marg .g.val span { min-height:5.5mm; }
+#hoja.compacto .p-meta .c { min-height:5.6mm; }
+#hoja.compacto .p-prod td { height:5.1mm; }
+#hoja.compacto .p-prod th { height:6.8mm; }
+#hoja.compacto .p-prod tfoot td { height:7mm; }
+#hoja.compacto .band { min-height:5mm; padding:.4mm 2mm; font-size:7.6pt; }
+#hoja.compacto .ing { flex-basis:33%; } #hoja.compacto .band .izq { gap:.8mm; }
+#hoja.compacto .blk .filas { padding:.2mm 3mm 1mm; }
+#hoja.compacto .p-acepto .lineas { margin-top:4.5mm; }
+#hoja.compacto .p-nv { min-height:6mm; margin-top:1mm; }
+#hoja.compacto .p-gastos, #hoja.compacto .p-cond { margin-top:1.5mm; }
+/* Casillas */
+#hoja .bx, #hoja .ci { display:inline-block; width:3.3mm; height:3.3mm; border:.7pt solid #2B3045; background:#fff; vertical-align:-.6mm; position:relative; flex:none; }
+#hoja .ci { border-radius:50%; width:3.4mm; height:3.4mm; }
+#hoja .bx.on::after { content:'X'; position:absolute; inset:0; font:700 8pt/3.3mm 'Gotham',sans-serif; text-align:center; }
+#hoja .ci.on::after { content:''; position:absolute; inset:.7mm; border-radius:50%; background:#1A1A1A; }
+/* Franjas grises con casillas e ingreso */
+#hoja .blk { border:.7pt solid #8A8FA0; margin-top:1.5mm; }
+#hoja .band { display:flex; align-items:center; background:#DCE0EA; border-bottom:.7pt solid #8A8FA0; padding:.7mm 3mm; font-weight:700; font-size:8.6pt; text-transform:uppercase; min-height:5.6mm; }
+#hoja .band .izq { flex:1; min-width:0; display:flex; justify-content:center; align-items:center; gap:1.2mm; white-space:nowrap; }
+#hoja .band .izq .sep { width:5mm; }
+#hoja .ing { flex:0 0 38%; min-width:0; display:flex; align-items:flex-end; gap:1.5mm; white-space:nowrap; }
+#hoja .ing .v { border-bottom:.8pt dotted #3C3F4A; } #hoja .ing .v::before, #hoja .ing .v::after { display:none; }
+#hoja .barra { display:inline-block; width:10mm; height:2.2mm; background:#3A4258; margin-right:2mm; align-self:center; }
+#hoja .blk .filas { padding:.5mm 3mm 1.5mm; }
+#hoja .canal { display:flex; flex-wrap:wrap; align-items:center; gap:1.2mm 4mm; margin-top:2mm; font-weight:700; font-size:9pt; }
+#hoja .canal span { display:inline-flex; align-items:center; gap:1.2mm; }
+/* Tabla de productos con la marca de agua */
+#hoja .p-tw { position:relative; margin-top:2mm; overflow:hidden; }
+#hoja .p-prod { width:100%; border-collapse:collapse; border:1.2pt solid #2B3045; font-variant-numeric:tabular-nums; }
+#hoja .p-prod th { background:#E2E3EC; font-weight:400; font-size:11.5pt; height:9mm; border:.7pt solid #2B3045; }
+#hoja .p-prod td { height:6.6mm; padding:0 2mm; border-left:.7pt solid #2B3045; border-right:.7pt solid #2B3045; border-bottom:.7pt solid #2B3045; }
+#hoja .p-prod td.r { text-align:right; white-space:nowrap; }
+#hoja .p-prod tfoot td { height:10mm; font-weight:700; font-size:11.5pt; border-top:1.2pt solid #2B3045; }
+#hoja .p-prod tfoot .cs { text-transform:uppercase; padding-left:5mm; font-size:10.5pt; white-space:nowrap; }
+#hoja .p-prod tfoot .tach { text-decoration:line-through; text-decoration-thickness:1.3pt; color:#8A8D99; font-weight:400; }
+#hoja .p-prod tfoot .tl { text-align:right; text-transform:uppercase; }
+#hoja .p-prod tfoot .vacio { border-left:0; border-bottom:0; }
+#hoja .p-prod tfoot .r { font-size:11pt; }
+#hoja .agua { position:absolute; left:-60%; right:-60%; top:54%; text-align:center; pointer-events:none; white-space:nowrap; font:400 56pt/1 'Gotham',sans-serif; color:rgba(110,112,128,.18); -webkit-text-stroke:.7pt #7C7F92; transform:translateY(-50%) scaleX(.58); }
+/* Condición de venta, "no válido" y fecha */
+#hoja .p-cond { display:grid; grid-template-columns:1.25fr 1fr .85fr; gap:4mm; align-items:center; border:.7pt solid #2B3045; background:#E4E6EE; padding:1.2mm 3mm 1.8mm; margin-top:2mm; font-weight:700; font-size:8.6pt; }
+#hoja .p-cond .c { min-height:5mm; }
+#hoja .p-cond .bx { margin-right:.8mm; }
+#hoja .p-nv { position:relative; display:flex; align-items:center; justify-content:flex-end; margin:1.5mm 0 0; min-height:7mm; }
+#hoja .p-nv .t { position:absolute; left:22mm; top:50%; font:400 19pt/1 'Gotham',sans-serif; transform:translateY(-50%) scaleX(.62); transform-origin:left center; white-space:nowrap; }
+#hoja .p-fecha { display:flex; align-items:center; gap:6mm; width:86mm; white-space:nowrap; border:.7pt solid #2B3045; background:#E4E6EE; padding:.8mm 3mm 1.2mm; font-weight:700; font-size:8.6pt; }
+#hoja .p-fecha .c { flex:1; min-height:4.6mm; }
+#hoja .p-fecha .v { border-bottom-style:dotted; } #hoja .p-fecha .v::before, #hoja .p-fecha .v::after { display:none; }
+/* Gastos y recargos (crédito personal) */
+#hoja .p-gastos { border:.7pt solid #2B3045; margin-top:2mm; }
+#hoja .p-gastos h3 { margin:0; text-align:center; font-weight:400; font-size:10pt; text-decoration:underline; padding:.2mm 0; background:#E4E6EE; border-bottom:.7pt solid #2B3045; }
+#hoja .p-gastos table { width:100%; border-collapse:collapse; }
+#hoja .p-gastos td { border:.7pt solid #2B3045; padding:.3mm 2mm; text-align:center; font-size:7.8pt; vertical-align:middle; line-height:1.15; }
+#hoja .p-gastos tr:first-child td { border-top:0; }
+#hoja .p-gastos td:first-child { border-left:0; width:54%; } #hoja .p-gastos td:last-child { border-right:0; }
+#hoja .p-gastos tr:last-child td { border-bottom:0; }
+#hoja .p-gastos .tc { font-size:9.6pt; }
+#hoja .p-gastos .txt { text-align:left; font-size:7.2pt; line-height:1.12; }
+/* Pie: márgenes + firmas */
+#hoja .p-pie { display:grid; grid-template-columns:64mm 1fr; gap:6mm; margin-top:2.5mm; padding:1.2mm; border:.7pt solid #8A8FA0; break-inside:avoid; }
+#hoja .p-marg { border:.7pt solid #2B3045; }
+#hoja .p-marg > b { display:block; text-align:center; font-size:9.5pt; padding:.6mm 0; border-bottom:.7pt solid #2B3045; }
+#hoja .p-marg .g { display:grid; grid-template-columns:1fr 1fr; }
+#hoja .p-marg .g span { padding:.4mm 3mm; font-size:8pt; text-align:center; }
+#hoja .p-marg .g span + span { border-left:.7pt solid #2B3045; }
+#hoja .p-marg .g.val span { text-align:left; font-weight:700; font-size:10pt; border-top:.7pt solid #2B3045; min-height:7mm; padding-top:1mm; }
+#hoja .p-acepto { border:.7pt solid #2B3045; padding:.8mm 4mm 1mm; }
+#hoja .p-acepto > div:first-child { text-align:center; font-size:8.6pt; letter-spacing:.45mm; }
+#hoja .p-acepto .lineas { display:grid; grid-template-columns:repeat(3,1fr); gap:8mm; margin-top:8mm; text-align:center; font-size:9pt; letter-spacing:.2mm; }
+#hoja .p-acepto .lineas span { border-top:1pt dotted #1A1A1A; padding-top:.8mm; text-transform:uppercase; }
+</style>
+</head>
+<body>
+<a class="skip" href="#form">Saltar al formulario</a>
+<header class="top">
+  <div class="top-in">
+    <div class="marca">
+      <img src="data:image/svg+xml;base64,{{LOGO}}" alt="" width="44" height="44">
+      <div><b>Notas de pedido</b><span>M&amp;A Representaciones S.R.L.</span></div>
+    </div>
+    <div class="tabs" role="tablist" aria-label="Tipo de nota">
+      <button role="tab" type="button" aria-selected="true" data-tipo="terreno">Crédito de terreno</button>
+      <button role="tab" type="button" aria-selected="false" data-tipo="personal">Crédito personal</button>
+    </div>
+    <div class="acciones">
+      <button class="btn btn-sec" type="button" id="btn-nueva">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Nueva nota</button>
+      <button class="btn btn-pri" type="button" id="btn-imprimir">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v7H6z"/></svg>Generar nota</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="titulo">
+    <h1 id="titulo-nota">Nota de pedido: crédito de terreno</h1>
+    <button class="btn btn-ghost" type="button" id="btn-notas">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg>Notas impresas</button>
+  </div>
+  <p class="ayuda-nota">Los campos con <span class="req-mark">*</span> son obligatorios. El borrador se guarda solo en esta computadora. <span class="guardado" id="guardado" role="status"></span></p>
+  <div class="errores" id="errores" role="alert" tabindex="-1">
+    <h2 id="errores-tit">Faltan datos</h2>
+    <ul id="errores-lista"></ul>
+  </div>
+  <form id="form" novalidate autocomplete="off"></form>
+  <div class="final">
+    <button class="btn btn-main" type="button" id="btn-imprimir-2">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v7H6z"/></svg>Generar nota</button>
+  </div>
+</main>
+
+<div id="hoja"></div>
+
+<dialog id="dlg-nueva" aria-labelledby="dlg-nueva-t">
+  <h2 id="dlg-nueva-t">¿Empezar una nota nueva?</h2>
+  <p>Se borra todo lo cargado en esta nota. Si ya la imprimiste o la guardaste en PDF, esa copia no se pierde.</p>
+  <div class="fila">
+    <button class="btn btn-sec" type="button" id="dlg-cancelar">Cancelar</button>
+    <button class="btn btn-danger" type="button" id="dlg-confirmar">Borrar y empezar</button>
+  </div>
+</dialog>
+<dialog id="dlg-formato" aria-labelledby="dlg-formato-t">
+  <h2 id="dlg-formato-t">¿En qué formato generás la nota?</h2>
+  <p>La imagen es una hoja A4 en alta calidad (300 dpi), lista para imprimir o mandar por WhatsApp.</p>
+  <div class="formatos">
+    <button class="btn" type="button" id="fmt-png">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/></svg>
+      <span><b>Imagen PNG A4</b><small>Se descarga al celular o la compu</small></span></button>
+    <button class="btn" type="button" id="fmt-pdf">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v7H6z"/></svg>
+      <span><b>PDF / Imprimir</b><small>Abre la ventana de impresión</small></span></button>
+  </div>
+  <div class="fila"><button class="btn btn-sec" type="button" id="fmt-cancelar">Cancelar</button></div>
+</dialog>
+<div class="generando" id="generando" role="status" hidden><div>Generando imagen A4…</div></div>
+<dialog id="dlg-notas" class="dlg-ancho" aria-labelledby="dlg-notas-t">
+  <h2 id="dlg-notas-t">Notas impresas</h2>
+  <p>Se guardan en esta computadora cada vez que imprimís. Abrir o duplicar reemplaza la nota que estás cargando.</p>
+  <div class="lista" id="notas-lista"></div>
+  <div class="fila"><button class="btn btn-sec" type="button" id="dlg-notas-cerrar">Cerrar</button></div>
+</dialog>
+<div class="toast" id="toast" role="status"></div>
+
+<script>{{HTML2CANVAS}}</script>
+<script>
+(function() {
+'use strict';
+
+var LOGO = 'data:image/svg+xml;base64,{{LOGO}}';
+
+// ---------- Opciones ----------
+var PROVINCIAS = ['Buenos Aires','Catamarca','Chaco','Chubut','Ciudad Autónoma de Buenos Aires','Córdoba','Corrientes','Entre Ríos','Formosa','Jujuy','La Pampa','La Rioja','Mendoza','Misiones','Neuquén','Río Negro','Salta','San Juan','San Luis','Santa Cruz','Santa Fe','Santiago del Estero','Tierra del Fuego','Tucumán'];
+var ESTADO_CIVIL = ['Soltero/a','Casado/a','Unión convivencial','Divorciado/a','Separado/a','Viudo/a'];
+var LOCAL = ['Propia','Alquilada','De familiar'];
+var CANALES = ['Salón','Camp. de difusión','Camp. tradicional','Personal','Terreno'];
+var TIPOS_DOC = ['DNI','LC','LE','Pasaporte'];
+var FRECUENCIAS = ['Semanal','Quincenal','Mensual'];
+var TXT_GASTO = 'El uso de la cuenta corriente devengará un costo administrativo que Ud. autoriza a ser cobrado mensualmente por efectuar operaciones financiadas con nuestra empresa.';
+var TXT_SEGURO = 'MYA Representaciones SRL podrá descontar mensualmente al titular un seguro por fallecimiento. El mismo entrará en vigencia el día del deceso y solo cubre los saldos impagos aun sin vencer por las compras realizadas.';
+
+function sit() { var vs = Array.prototype.slice.call(arguments); return function(d) { var a = [].concat(d.situacion || []); return vs.some(function(x) { return a.indexOf(x) >= 0; }); }; }
+var DEP = sit('Relación de dependencia'), MONO = sit('Monotributista', 'Responsable inscripto'), JUB = sit('Jubilado', 'Pensionado');
+function conIf(cond, campos) { return campos.map(function(c) { if (cond) c.showIf = cond; return c; }); }
+
+// ---------- Bloques comunes ----------
+var CABECERA = { id:'cab', titulo:'Datos de la nota', campos:[
+  {id:'numero', label:'N° de nota', s:1, inputmode:'numeric', hint:'Se sugiere el que sigue a la última nota impresa.'},
+  {id:'fecha', label:'Fecha', type:'date', req:true, s:1, hoy:true},
+  {id:'vendedor', label:'Vendedor', req:true, s:2},
+  {id:'area', label:'Área', req:true, s:1},
+  {id:'circuito', label:'Circuito', s:1},
+  {id:'zona', label:'Zona', req:true, s:1},
+  {id:'sub_zona', label:'Sub zona', s:1},
+  {id:'fecha_entrega', label:'Fecha de entrega', type:'date', s:1},
+  {id:'entregado', label:'Entregado', s:1}
+]};
+var CANAL = { id:'canal', titulo:'Canal de venta', campos:[
+  {id:'canal', label:'Canal de venta', type:'checks', options:CANALES, req:true, s:4, msg:'marcá al menos un canal.'}
+]};
+function bloqueComercio(cond) {
+  return conIf(cond, [
+    {id:'com_rubro', label:'Rubro comercial', s:2},
+    {id:'com_nombre', label:'Nombre del comercio', s:2},
+    {id:'com_direccion', label:'Dirección del comercio', req:true, s:2},
+    {id:'com_barrio', label:'Barrio del comercio', s:1},
+    {id:'com_localidad', label:'Localidad del comercio', req:true, s:1},
+    {id:'com_provincia', label:'Provincia del comercio', type:'select', options:PROVINCIAS, req:true, s:1},
+    {id:'com_telefono', label:'Teléfono del comercio', type:'tel', s:1, reqIf:cond || undefined},
+    {id:'com_largo', label:'Largo del local (m)', type:'number', s:1},
+    {id:'com_ancho', label:'Ancho del local (m)', type:'number', s:1},
+    {id:'com_local', label:'El local del comercio es', type:'radio', options:LOCAL, req:true, s:2},
+    {id:'com_antiguedad', label:'Antigüedad del comercio', s:2, ph:'Ej: 3 años'}
+  ]);
+}
+var CONDICION_CAMPOS = function(cuotaLabel) { return [
+  {id:'anticipo_si', label:'Con anticipo', type:'check', s:1},
+  {id:'anticipo', label:'Anticipo', type:'money', s:1, reqIf:function(d) { return !!d.anticipo_si; }, showIf:function(d) { return !!d.anticipo_si; }},
+  {id:'cuotas', label:'N° de cuotas', type:'int', req:true, s:1},
+  {id:'monto_cuota', label:cuotaLabel, type:'money', req:true, s:1}
+]; };
+var MARGENES = { id:'margenes', titulo:'Márgenes asignados', ayuda:'Lo completa quien asigna el crédito; no es obligatorio para el vendedor.', campos:[
+  {id:'margen_compra', label:'Compra', type:'money', s:1},
+  {id:'margen_cuota', label:'Cuota', type:'money', s:1}
+]};
+
+// ---------- Formularios ----------
+var FORMS = {
+  terreno: {
+    titulo:'Nota de pedido: crédito de terreno', tituloHoja:['Nota de pedido','Crédito de terreno'],
+    secciones:[
+      CABECERA,
+      { id:'titular', titulo:'Titular', campos:[
+        {id:'apellido_nombre', label:'Apellido y nombre', req:true, s:2},
+        {id:'dni', label:'D.N.I.', type:'dni', req:true, s:1},
+        {id:'nacionalidad', label:'Nacionalidad', req:true, s:1, def:'Argentina'},
+        {id:'estado_civil', label:'Estado civil', type:'select', options:ESTADO_CIVIL, s:1},
+        {id:'conyuge_nombre', label:'Nombre del cónyuge', s:2},
+        {id:'conyuge_dni', label:'D.N.I. del cónyuge', type:'dni', s:1},
+        {id:'domicilio', label:'Dirección particular', req:true, s:2},
+        {id:'barrio', label:'Barrio', s:1},
+        {id:'localidad', label:'Localidad', req:true, s:1},
+        {id:'provincia', label:'Provincia', type:'select', options:PROVINCIAS, req:true, s:1},
+        {id:'tel_celular', label:'Teléfono celular', type:'cel', req:true, s:1},
+        {id:'tel_fijo', label:'Teléfono fijo (teléfono alternativo)', type:'tel', req:true, s:1},
+        {id:'grupo_familiar', label:'Cant. grupo familiar', type:'int', s:1},
+        {id:'vivienda', label:'La vivienda que habita es', type:'radio', options:LOCAL, req:true, s:4}
+      ]},
+      { id:'comercio', titulo:'Comercio e ingresos', campos:[
+        {id:'cliente_mya', label:'Ya es cliente M&A', type:'check', s:1},
+        {id:'ingreso', label:'Ingreso mensual', type:'money', s:1}
+      ].concat(bloqueComercio(null))},
+      CANAL,
+      { id:'productos', titulo:'Productos', tipo:'productos' },
+      { id:'condicion', titulo:'Condición de venta', tipo:'condicion', ayuda:'El saldo es N° de cuotas × monto de la cuota. El total es anticipo + saldo.', campos:[
+        {id:'frecuencia', label:'Frecuencia de la cuota', type:'radio', options:FRECUENCIAS, req:true, s:4, def:'Semanal'}
+      ].concat(CONDICION_CAMPOS('Monto de la cuota')) },
+      MARGENES
+    ]
+  },
+  personal: {
+    titulo:'Nota de pedido: crédito personal', tituloHoja:['Nota de pedido','Crédito personal'],
+    secciones:[
+      CABECERA,
+      { id:'titular', titulo:'Titular', campos:[
+        {id:'apellido_nombre', label:'Apellido y nombre del titular', req:true, s:2},
+        {id:'tipo_doc', label:'Tipo de doc.', type:'select', options:TIPOS_DOC, req:true, s:1, def:'DNI'},
+        {id:'dni', label:'N° de doc.', type:'dni', req:true, s:1},
+        {id:'conyuge_nombre', label:'Apellido y nombre del cónyuge', s:2, hint:'Si tiene cónyuge, completá también su documento.'},
+        {id:'conyuge_tipo_doc', label:'Tipo de doc. del cónyuge', type:'select', options:TIPOS_DOC, s:1, def:'DNI'},
+        {id:'conyuge_dni', label:'N° de doc. del cónyuge', type:'dni', s:1},
+        {id:'domicilio', label:'Domicilio particular', req:true, s:2},
+        {id:'barrio', label:'Barrio', s:1},
+        {id:'cp', label:'Código postal', type:'cp', req:true, s:1},
+        {id:'localidad', label:'Localidad', req:true, s:1},
+        {id:'provincia', label:'Provincia', type:'select', options:PROVINCIAS, req:true, s:1},
+        {id:'fecha_nac', label:'Fecha de nacimiento', type:'date', req:true, s:1, mayor:true},
+        {id:'tel_celular', label:'Teléfono celular', type:'cel', req:true, s:1},
+        {id:'tel_fijo', label:'Teléfono fijo (teléfono alternativo)', type:'tel', req:true, s:1},
+        {id:'email', label:'Correo electrónico', type:'email', s:2}
+      ]},
+      { id:'laboral', titulo:'Situación laboral e ingresos', ayuda:'Cada casilla habilita sus datos. Relación de dependencia pide domicilio y teléfono laboral; monotributista o R. inscripto, dirección y teléfono del comercio.', campos:[
+        {id:'situacion', label:'Situación (tildá la que corresponda para habilitar sus datos)', type:'checks', req:true, s:4, msg:'tildá al menos una situación.', options:['Relación de dependencia','Monotributista','Responsable inscripto','Jubilado','Pensionado']},
+        {id:'ingreso', label:'Ingreso mensual', type:'money', s:1}
+      ].concat(conIf(DEP, [
+        {id:'dep_tipo', label:'Tipo de empleo', type:'radio', options:['Permanente','Contratado','Temporario'], s:3},
+        {id:'dep_empresa', label:'Empresa (empleador)', s:2},
+        {id:'dep_ramo', label:'Ramo', s:1},
+        {id:'dep_funcion', label:'Función', s:1},
+        {id:'dep_antiguedad', label:'Antigüedad', s:1, ph:'Ej: 2 años'},
+        {id:'dep_domicilio', label:'Domicilio laboral', req:true, s:2},
+        {id:'dep_numero', label:'N°', s:1},
+        {id:'dep_depto', label:'Depto / piso', s:1},
+        {id:'dep_localidad', label:'Localidad laboral', s:1},
+        {id:'dep_cp', label:'Código postal laboral', type:'cp', s:1},
+        {id:'dep_telefono', label:'Teléfono laboral', type:'tel', req:true, s:1},
+        {id:'dep_contacto', label:'Contacto', s:1}
+      ])).concat(conIf(MONO, [
+        {id:'cuit', label:'CUIT', type:'cuit', s:1},
+        {id:'categoria', label:'Categoría', s:1},
+        {id:'fecha_insc', label:'Fecha de inscripción', type:'date', s:1}
+      ])).concat(bloqueComercio(MONO)).concat(conIf(JUB, [
+        {id:'jub_beneficio', label:'N° de beneficiario', s:1},
+        {id:'jub_antiguedad', label:'Antigüedad', s:1},
+        {id:'jub_banco', label:'Banco donde cobra', s:1},
+        {id:'jub_sucursal', label:'Sucursal', s:1}
+      ]))},
+      CANAL,
+      { id:'productos', titulo:'Productos', tipo:'productos' },
+      { id:'condicion', titulo:'Condición de venta', tipo:'condicion', campos:CONDICION_CAMPOS('Monto de la cuota') },
+      { id:'gastos', titulo:'Gastos y recargos vigentes', tipo:'gastos', campos:[
+        {id:'gasto_admin', label:'Gasto administrativo mensual (c/IVA)', type:'money', req:true, s:2}
+      ]},
+      MARGENES
+    ]
+  }
+};
+
+// ---------- Utilidades ----------
+var $ = function(s, r) { return (r || document).querySelector(s); };
+var $$ = function(s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function num(v) { var n = parseFloat(String(v == null ? '' : v).replace(',', '.')); return isFinite(n) ? n : 0; }
+function fmtN(n) { return n.toLocaleString('es-AR', {minimumFractionDigits:0, maximumFractionDigits:2}); }
+function fmt(n) { return '$ ' + fmtN(n); }
+// Montos: se escriben como "600.000,50" (punto de miles, coma decimal)
+function money(v) { return num(String(v == null ? '' : v).replace(/\./g, '')); }
+function normalizarMonto(s) { s = String(s == null ? '' : s); return /^\d+\.\d{1,2}$/.test(s) ? s.replace('.', ',') : s; }  // borradores viejos guardaban "1500.5"
+function formatearMonto(el, sinCursor) {
+  var v = el.value, antes = v.slice(0, el.selectionStart || v.length).replace(/[^\d,]/g, '').length;
+  var limpio = v.replace(/[^\d,]/g, ''), i = limpio.indexOf(',');
+  var ent = (i < 0 ? limpio : limpio.slice(0, i)).replace(/^0+(?=\d)/, '');
+  var dec = i < 0 ? null : limpio.slice(i + 1).replace(/,/g, '').slice(0, 2);
+  var out = ent.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + (dec !== null ? ',' + dec : '');
+  if (out === v) return;
+  el.value = out;
+  if (sinCursor) return;
+  var n = 0, p = 0;
+  while (p < out.length && n < antes) { if (/[\d,]/.test(out[p])) n++; p++; }
+  el.setSelectionRange(p, p);
+}
+function fecha(iso) { if (!iso) return ''; var p = iso.split('-'); return p.length === 3 ? p[2] + '/' + p[1] + '/' + p[0] : iso; }
+function hoyIso() { var d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); }
+function digitos(s) { return String(s || '').replace(/\D/g, ''); }
+function cuitValido(c) {
+  c = digitos(c); if (c.length !== 11) return false;
+  var m = [5,4,3,2,7,6,5,4,3,2], s = 0;
+  for (var i = 0; i < 10; i++) s += +c[i] * m[i];
+  var v = 11 - (s % 11); if (v === 11) v = 0; if (v === 10) v = 9;
+  return v === +c[10];
+}
+function toast(msg) { var t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(function() { t.classList.remove('on'); }, 3000); }
+var store = {
+  get: function(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } },
+  set: function(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } },
+  del: function(k) { try { localStorage.removeItem(k); } catch (e) {} }
+};
+
+// ---------- Estado ----------
+var tipo = store.get('nota-tipo') === 'personal' ? 'personal' : 'terreno';
+var form = $('#form');
+function clave() { return 'nota-borrador-' + tipo; }
+// Historial: cada nota impresa queda guardada en esta computadora para reabrirla o duplicarla
+var HIST = 'notas-historial', HIST_MAX = 60;
+function historial() { var h = store.get(HIST); return Array.isArray(h) ? h : []; }
+function registrar(d) {
+  var h = historial().filter(function(n) { return !(n.tipo === tipo && n.numero === d.numero); });
+  h.unshift({tipo:tipo, numero:d.numero, fecha:d.fecha, cliente:d.apellido_nombre, total:totales(d).total, datos:d});
+  store.set(HIST, h.slice(0, HIST_MAX));
+}
+function siguienteNumero() {
+  var ns = historial().filter(function(n) { return n.tipo === tipo && digitos(n.numero); }).map(function(n) { return digitos(n.numero); });
+  if (!ns.length) return '';
+  var max = ns.reduce(function(a, b) { return +b > +a ? b : a; });
+  var sig = String(+max + 1);
+  while (sig.length < max.length) sig = '0' + sig;  // respeta ceros a la izquierda del talonario: 0041 -> 0042
+  return sig;
+}
+function camposActuales() {
+  return FORMS[tipo].secciones.reduce(function(out, s) { return s.campos ? out.concat(s.campos) : out; }, []);
+}
+
+// ---------- Render del formulario ----------
+var ICO_X = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>';
+var ICO_MAS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>';
+function inputHtml(c) {
+  var name = 'name="' + c.id + '" id="f-' + c.id + '"';
+  var aria = ' aria-describedby="e-' + c.id + (c.hint ? ' h-' + c.id : '') + '"' + (c.req ? ' aria-required="true"' : '');
+  var ph = c.ph ? ' placeholder="' + esc(c.ph) + '"' : '';
+  switch (c.type) {
+    case 'select':
+      return '<select ' + name + aria + '><option value="">Elegí una opción</option>' + c.options.map(function(o) { return '<option>' + esc(o) + '</option>'; }).join('') + '</select>';
+    case 'radio': case 'checks':
+      var t = c.type === 'radio' ? 'radio' : 'checkbox';
+      return '<div class="opciones" role="' + (t === 'radio' ? 'radiogroup' : 'group') + '" aria-labelledby="l-' + c.id + '"' + aria + '>' + c.options.map(function(o, i) {
+        return '<label><input type="' + t + '" name="' + c.id + '" value="' + esc(o) + '"' + (i === 0 ? ' id="f-' + c.id + '"' : '') + '>' + esc(o) + '</label>';
+      }).join('') + '</div>';
+    case 'check':
+      return '<label class="chk"><input type="checkbox" ' + name + ' value="Sí">' + esc(c.label) + '</label>';
+    case 'money':
+      return '<div class="money"><input type="text" inputmode="decimal" data-money ' + name + aria + ' placeholder="' + esc(c.ph || '0') + '"></div>';
+    case 'number':
+      return '<input type="number" min="0" step="0.01" inputmode="decimal" ' + name + aria + ph + '>';
+    case 'int':
+      return '<input type="number" min="1" step="1" inputmode="numeric" ' + name + aria + ph + '>';
+    case 'date':
+      return '<input type="date" ' + name + aria + '>';
+    case 'dni':
+      return '<input type="text" inputmode="numeric" maxlength="8" ' + name + aria + ' placeholder="Sin puntos: 30123456">';
+    case 'cel':
+      return '<input type="tel" inputmode="numeric" maxlength="10" ' + name + aria + ' placeholder="10 números: 3815551234">';
+    case 'cuit':
+      return '<input type="text" inputmode="numeric" maxlength="13" ' + name + aria + ' placeholder="20-12345678-9">';
+    case 'cp':
+      return '<input type="text" maxlength="8" ' + name + aria + ' placeholder="4000 o T4000ABC">';
+    case 'tel':
+      return '<input type="tel" inputmode="tel" ' + name + aria + ' placeholder="Con característica">';
+    case 'email':
+      return '<input type="email" inputmode="email" ' + name + aria + ph + '>';
+    default:
+      return '<input type="text" ' + name + aria + (c.inputmode ? ' inputmode="' + c.inputmode + '"' : '') + ph + '>';
+  }
+}
+function campoHtml(c) {
+  var grupo = c.type === 'radio' || c.type === 'checks' || c.type === 'check';
+  var mark = c.req ? ' <span class="req-mark" aria-hidden="true">*</span>' : (c.reqIf ? ' <span class="req-mark req-if" aria-hidden="true" hidden>*</span>' : '');
+  var lab = c.type === 'check' ? '' : grupo ? '<span class="lbl" id="l-' + c.id + '">' + esc(c.label) + mark + '</span>' : '<label for="f-' + c.id + '">' + esc(c.label) + mark + '</label>';
+  return '<div class="f s' + (c.s || 1) + (c.type === 'check' ? ' f-chk' : '') + '" data-campo="' + c.id + '">' + lab + inputHtml(c) +
+    (c.hint ? '<span class="hint" id="h-' + c.id + '">' + esc(c.hint) + '</span>' : '') +
+    '<span class="err" id="e-' + c.id + '"></span></div>';
+}
+function seccionHtml(s) {
+  var h = '<section class="panel" data-sec="' + s.id + '" aria-labelledby="t-' + s.id + '"><h2 id="t-' + s.id + '">' + esc(s.titulo) + '</h2>' + (s.ayuda ? '<p class="ayuda">' + esc(s.ayuda) + '</p>' : '');
+  if (s.tipo === 'productos') {
+    var req = ' <span class="req-mark" aria-hidden="true">*</span>';
+    h += '<div class="prod-wrap"><table class="prod"><thead><tr><th class="w-cod">Código' + req + '</th><th class="w-cant">Cant.' + req + '</th><th>Producto' + req + '</th>' +
+      '<th class="w-pu r">Precio unit.' + (creditoTerreno() ? '' : req) + '</th><th class="w-sub r">Subtotal</th><th class="w-x"><span class="sr">Quitar</span></th></tr></thead>' +
+      '<tbody id="prod-body"></tbody><tfoot><tr><td colspan="4" class="r" id="prod-total-lbl">Total</td><td class="r tot" id="prod-total">$ 0</td><td></td></tr></tfoot></table></div>' +
+      '<button type="button" class="btn btn-add" id="btn-add-prod">' + ICO_MAS + 'Agregar producto</button>' +
+      '<p class="prod-err" id="prod-err"></p>';
+  } else {
+    h += '<div class="grid">' + s.campos.map(campoHtml).join('') + '</div>';
+    if (s.tipo === 'condicion') h += '<div class="resumen" id="resumen-cond"></div>';
+    if (s.tipo === 'gastos') {
+      h += '<table class="cargos"><thead><tr><th>Concepto</th><th>Costo c/IVA</th><th>Período</th><th>Tipo de cargo</th></tr></thead><tbody>' +
+        '<tr><td><span class="t">Gastos administrativos</span>' + esc(TXT_GASTO) + '</td><td id="gasto-admin-txt">$ —</td><td>Mensual</td><td>Obligatorio</td></tr>' +
+        '<tr><td><span class="t">Seguro de saldo deudor (planes con y sin interés)</span>' + esc(TXT_SEGURO) + '</td><td>3% del saldo deudor</td><td>Mensual</td><td>Obligatorio</td></tr>' +
+        '</tbody></table>';
+    }
+  }
+  return h + '</section>';
+}
+function render() {
+  var F = FORMS[tipo];
+  $('#titulo-nota').textContent = F.titulo;
+  document.title = F.titulo.replace(': ', ' - ');
+  $$('.tabs button').forEach(function(b) { b.setAttribute('aria-selected', b.dataset.tipo === tipo ? 'true' : 'false'); });
+  form.innerHTML = F.secciones.map(seccionHtml).join('');
+  limpiarErrores();
+  var borr = store.get(clave());
+  if (borr) { cargar(borr); if (tipo === 'terreno' && !borr.frecuencia) setVal('frecuencia', 'Semanal'); }
+  else {
+    camposActuales().forEach(function(c) {
+      if (c.hoy) setVal(c.id, hoyIso());
+      if (c.def) setVal(c.id, c.def);
+    });
+    setVal('numero', siguienteNumero());
+    agregarFila();
+  }
+  if (!$$('#prod-body tr').length) agregarFila();
+  $$('[data-money]', form).forEach(function(el) { el.value = normalizarMonto(el.value); formatearMonto(el, true); });
+  actualizar();
+}
+
+// ---------- Leer / escribir valores ----------
+function setVal(id, v) {
+  var els = $$('[name="' + id + '"]', form);
+  if (!els.length) return;
+  if (els[0].type === 'radio' || els[0].type === 'checkbox') {
+    var arr = Array.isArray(v) ? v : [v];
+    els.forEach(function(e) { e.checked = arr.indexOf(e.value) >= 0; });
+  } else els[0].value = v == null ? '' : v;
+}
+function datos() {
+  var d = {};
+  camposActuales().forEach(function(c) {
+    var els = $$('[name="' + c.id + '"]', form);
+    if (!els.length) return;
+    if (c.type === 'checks') d[c.id] = els.filter(function(e) { return e.checked; }).map(function(e) { return e.value; });
+    else if (c.type === 'radio') { var r = els.filter(function(e) { return e.checked; })[0]; d[c.id] = r ? r.value : ''; }
+    else if (c.type === 'check') d[c.id] = els[0].checked ? 'Sí' : '';
+    else d[c.id] = els[0].value.trim();
+  });
+  d.productos = $$('#prod-body tr').map(function(tr) {
+    return { codigo:$('[data-k=codigo]', tr).value.trim(), cant:$('[data-k=cant]', tr).value.trim(),
+             producto:$('[data-k=producto]', tr).value.trim(), precio:creditoTerreno() ? '' : $('[data-k=precio]', tr).value.trim() };
+  });
+  return d;
+}
+function cargar(d) {
+  Object.keys(d).forEach(function(k) { if (k !== 'productos') setVal(k, d[k]); });
+  $('#prod-body').innerHTML = '';
+  (d.productos || []).forEach(function(p) { agregarFila(p); });
+}
+
+// ---------- Productos ----------
+function agregarFila(p) {
+  p = p || {};
+  var tr = document.createElement('tr');
+  tr.innerHTML =
+    '<td><input data-k="codigo" aria-label="Código" value="' + esc(p.codigo) + '"></td>' +
+    '<td><input data-k="cant" type="number" min="1" step="1" inputmode="numeric" aria-label="Cantidad" value="' + esc(p.cant || '1') + '"></td>' +
+    '<td><input data-k="producto" aria-label="Producto" value="' + esc(p.producto) + '"></td>' +
+    // en crédito de terreno el precio no se usa: el total sale de anticipo + cuotas
+    (creditoTerreno()
+      ? '<td><input data-k="precio" type="text" disabled placeholder="No se usa" aria-label="Precio unitario (no se usa en crédito de terreno)" value=""></td>'
+      : '<td><div class="money"><input data-k="precio" data-money type="text" inputmode="decimal" placeholder="0" aria-label="Precio unitario" value="' + esc(normalizarMonto(p.precio)) + '"></div></td>') +
+    '<td class="r sub">$ 0</td>' +
+    '<td><button type="button" class="btn-ico" aria-label="Quitar producto" title="Quitar producto">' + ICO_X + '</button></td>';
+  $('#prod-body').appendChild(tr);
+  return tr;
+}
+// Crédito de terreno (cuota semanal, quincenal o mensual): saldo = cuotas × monto de la cuota; total = anticipo + saldo.
+// Crédito personal: total = suma de productos; saldo = total - anticipo.
+function creditoTerreno() { return tipo === 'terreno'; }
+function totales(d) {
+  var anticipo = d.anticipo_si ? money(d.anticipo) : 0, enCuotas = num(d.cuotas) * money(d.monto_cuota);
+  if (creditoTerreno()) return {total:anticipo + enCuotas, anticipo:anticipo, saldo:enCuotas, enCuotas:enCuotas};
+  var total = d.productos.reduce(function(s, p) { return s + num(p.cant) * money(p.precio); }, 0);
+  return {total:total, anticipo:anticipo, saldo:Math.max(total - anticipo, 0), enCuotas:enCuotas};
+}
+// Subtotal de una fila: en crédito de terreno con más de un producto no se calcula (lo define el vendedor en el total)
+function subtotal(p, cargados) {
+  if (creditoTerreno() && cargados > 1) return null;
+  return String(p.precio || '').trim() ? num(p.cant) * money(p.precio) : null;
+}
+
+// ---------- Visibilidad, totales, guardado ----------
+function actualizar() {
+  var d = datos();
+  camposActuales().forEach(function(c) {
+    var w = $('[data-campo="' + c.id + '"]', form); if (!w) return;
+    if (c.showIf) w.hidden = !c.showIf(d);
+    if (c.reqIf) { var m = $('.req-if', w); if (m) m.hidden = !c.reqIf(d); }
+  });
+  var cargados = d.productos.filter(function(p) { return p.producto || p.codigo; }).length;
+  $$('#prod-body tr').forEach(function(tr, i) {
+    var st = subtotal(d.productos[i], cargados);
+    $('.sub', tr).textContent = st === null ? '—' : fmt(st);
+  });
+  var t = totales(d);
+  $('#prod-total').textContent = fmt(t.total);
+  $('#prod-total-lbl').textContent = creditoTerreno() ? 'Total (anticipo + cuotas)' : 'Total';
+  var r = $('#resumen-cond');
+  var conCuotas = num(d.cuotas) && money(d.monto_cuota), anticipoHtml = d.anticipo_si ? '<span>Anticipo <b>' + fmt(t.anticipo) + '</b></span>' : '';
+  if (r && creditoTerreno()) {
+    r.innerHTML = '<div class="res-fila">' + anticipoHtml +
+      '<span>Saldo' + (conCuotas ? ' (' + num(d.cuotas) + ' cuotas' + (d.frecuencia ? ' ' + d.frecuencia.toLowerCase() + 'es' : '') + ' de ' + fmt(money(d.monto_cuota)) + ')' : '') + ' <b>' + fmt(t.saldo) + '</b></span>' +
+      '<span>Total <b>' + fmt(t.total) + '</b></span></div>';
+  } else if (r) {
+    var dif = t.enCuotas - t.saldo, extra = '', aviso = '';
+    if (conCuotas && t.saldo && dif > 0.5) extra = ' <small>(' + Math.round(dif / t.saldo * 100) + '% más que el saldo)</small>';
+    if (conCuotas && t.saldo && dif < -0.5) aviso = '<p class="aviso">Las cuotas suman ' + fmt(t.enCuotas) + ', menos que el saldo de ' + fmt(t.saldo) + '. Revisá el N° de cuotas o el monto de la cuota.</p>';
+    r.innerHTML = '<div class="res-fila"><span>Total <b>' + fmt(t.total) + '</b></span>' + anticipoHtml +
+      '<span>Saldo <b>' + fmt(t.saldo) + '</b></span>' +
+      (conCuotas ? '<span>Cuotas × monto <b>' + fmt(t.enCuotas) + '</b>' + extra + '</span>' : '') + '</div>' + aviso;
+  }
+  var g = $('#gasto-admin-txt'); if (g) g.textContent = d.gasto_admin ? fmt(money(d.gasto_admin)) : '$ —';
+  return d;
+}
+var tGuardar;
+function guardar() {
+  clearTimeout(tGuardar);
+  tGuardar = setTimeout(function() {
+    var ok = store.set(clave(), datos());
+    var hh = new Date().toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit'});
+    $('#guardado').textContent = ok ? 'Borrador guardado ' + hh : 'No se pudo guardar el borrador';
+  }, 400);
+}
+
+// ---------- Validación ----------
+function errorDe(c, v, d) {
+  var vacio = Array.isArray(v) ? !v.length : !v;
+  var requerido = c.req || (c.reqIf && c.reqIf(d));
+  if (vacio) return requerido ? (c.msg || 'falta completarlo.') : '';
+  switch (c.type) {
+    case 'dni': if (!/^\d{7,8}$/.test(v)) return 'solo números, sin puntos ni espacios (7 u 8 dígitos).'; break;
+    case 'cel': if (!/^\d{10}$/.test(v)) return 'tienen que ser 10 números, sin 0, 15, espacios ni guiones (ej: 3815551234).'; break;
+    case 'cuit': if (!cuitValido(v)) return 'no es válido: revisá los 11 números.'; break;
+    case 'tel': if (digitos(v).length < 8) return 'poné la característica (al menos 8 números).'; break;
+    case 'email': if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) return 'no tiene un formato válido.'; break;
+    case 'cp': if (!/^([A-Za-z]\d{4}[A-Za-z]{3}|\d{4})$/.test(v.replace(/\s/g, ''))) return '4 números (4000) o formato T4000ABC.'; break;
+    case 'money': if (money(v) <= 0) return 'tiene que ser mayor a 0.'; break;
+    case 'number': if (num(v) <= 0) return 'tiene que ser mayor a 0.'; break;
+    case 'int': if (!/^\d+$/.test(v) || +v < 1) return 'tiene que ser un número entero mayor a 0.'; break;
+    case 'date':
+      if (c.mayor) {
+        var nac = new Date(v + 'T00:00'), lim = new Date(); lim.setFullYear(lim.getFullYear() - 18);
+        if (nac > lim) return 'el titular tiene que ser mayor de 18 años.';
+      }
+      break;
+  }
+  return '';
+}
+function limpiarErrores() {
+  $$('.f.invalid', form).forEach(function(w) { w.classList.remove('invalid'); });
+  $$('#prod-body td.invalid').forEach(function(td) { td.classList.remove('invalid'); });
+  $$('[aria-invalid]', form).forEach(function(e) { e.removeAttribute('aria-invalid'); });
+  var pe = $('#prod-err'); if (pe) pe.classList.remove('on');
+  $('#errores').classList.remove('on');
+}
+function validar() {
+  limpiarErrores();
+  var d = actualizar(), lista = [];
+  camposActuales().forEach(function(c) {
+    var w = $('[data-campo="' + c.id + '"]', form);
+    if (!w || w.hidden) return;
+    var msg = errorDe(c, d[c.id], d);
+    if (!msg) return;
+    var txt = msg.charAt(0).toUpperCase() + msg.slice(1);
+    w.classList.add('invalid'); $('#e-' + c.id).textContent = txt;
+    var el = $('#f-' + c.id); if (el) el.setAttribute('aria-invalid', 'true');
+    lista.push({id:'f-' + c.id, txt:c.label + ': ' + msg});
+  });
+  // Los dos teléfonos tienen que ser números distintos
+  var cel = digitos(d.tel_celular), alt = digitos(d.tel_fijo);
+  if (cel && alt && cel === alt && !$('[data-campo="tel_fijo"]', form).classList.contains('invalid')) {
+    var wa = $('[data-campo="tel_fijo"]', form), ma = 'tiene que ser distinto del celular.';
+    wa.classList.add('invalid'); $('#e-tel_fijo').textContent = 'Tiene que ser distinto del celular.';
+    $('#f-tel_fijo').setAttribute('aria-invalid', 'true');
+    lista.push({id:'f-tel_fijo', txt:'Teléfono fijo (teléfono alternativo): ' + ma});
+  }
+  // Productos: al menos uno completo; las filas a medio cargar se marcan
+  var completos = 0, primero = null;
+  $$('#prod-body tr').forEach(function(tr) {
+    var vals = ['codigo','cant','producto','precio'].map(function(k) { return $('[data-k=' + k + ']', tr); });
+    if (!vals[0].value.trim() && !vals[2].value.trim() && !vals[3].value.trim()) return;
+    var mal = vals.filter(function(e) {
+      var x = e.value.trim(), k = e.dataset.k;
+      if (k === 'precio') return creditoTerreno() ? !!x && money(x) <= 0 : !x || money(x) <= 0;
+      return !x || (k === 'cant' && num(x) <= 0);
+    });
+    mal.forEach(function(e) { e.closest('td').classList.add('invalid'); e.setAttribute('aria-invalid', 'true'); if (!primero) primero = e; });
+    if (!mal.length) completos++;
+  });
+  if (!completos || primero) {
+    var campos = creditoTerreno() ? 'código, cantidad y producto' : 'código, cantidad, producto y precio';
+    var m = primero ? 'hay productos a medio cargar: completá ' + campos + '.' : 'cargá al menos un producto con ' + campos + '.';
+    var pe = $('#prod-err'); pe.textContent = m.charAt(0).toUpperCase() + m.slice(1); pe.classList.add('on');
+    var foco = primero || $('#prod-body [data-k=codigo]');
+    foco.id = foco.id || 'prod-foco';
+    if (!primero) foco.closest('td').classList.add('invalid');
+    lista.push({id:foco.id, txt:'Productos: ' + m});
+  }
+  if (!lista.length) return true;
+  $('#errores-tit').textContent = 'No se puede generar la nota: ' + (lista.length === 1 ? 'falta 1 dato' : 'faltan ' + lista.length + ' datos');
+  $('#errores-lista').innerHTML = lista.map(function(e) { return '<li><a href="#' + e.id + '" data-ir="' + e.id + '">' + esc(e.txt) + '</a></li>'; }).join('');
+  var box = $('#errores'); box.classList.add('on');
+  // en celular la barra no es fija: solo se descuenta su alto cuando tapa el contenido
+  var barra = $('.top'), tapa = getComputedStyle(barra).position === 'sticky' ? barra.offsetHeight : 0;
+  window.scrollTo(0, box.getBoundingClientRect().top + window.scrollY - tapa - 16);
+  box.focus({preventScroll:true});
+  return false;
+}
+
+// ---------- Hoja impresa (calcada del talonario) ----------
+var CANALES_PAPEL = ['Salón','Camp. de Difusión','Camp. Tradicional','Personal','Terreno'];
+var FILAS_PAPEL = 8;
+function hojaHtml(d) {
+  var P = tipo === 'personal', t = totales(d);
+  var v = function(id) { var x = d[id]; return Array.isArray(x) ? x.join(', ') : (x || ''); };
+  var m = function(id) { return d[id] ? fmtN(money(d[id])) : ''; };
+  // c: etiqueta + línea; cH: igual pero con HTML propio adentro de la línea
+  var cH = function(lb, html, cls) { return '<div class="c' + (cls ? ' ' + cls : '') + '"><span class="lb">' + lb + '</span><span class="v">' + html + '</span></div>'; };
+  var c = function(lb, val, cls) { return cH(lb, esc(val), cls); };
+  var par = function(a, b, cls) { return '<div class="par' + (cls ? ' ' + cls : '') + '">' + a + b + '</div>'; };
+  var bx = function(on) { return '<span class="bx' + (on ? ' on' : '') + '"></span>'; };
+  var ci = function(on) { return '<span class="ci' + (on ? ' on' : '') + '"></span>'; };
+  var local = function(val) {
+    return '<span class="ops"><span>Propia' + ci(val === 'Propia') + '</span><span>Alq.' + ci(val === 'Alquilada') + '</span><span>De fliar.' + ci(val === 'De familiar') + '</span></span>';
+  };
+  var dims = function(l, a) { return '<span class="dims"><span>Largo: <b>' + esc(l) + '</b></span><span>Ancho: <b>' + esc(a) + '</b></span></span>'; };
+  var ing = function(on) { return '<span class="ing"><span class="barra"></span>Ingreso mensual: $<span class="v">' + (on ? m('ingreso') : '') + '</span></span>'; };
+  var band = function(izq, on) { return '<div class="band"><span class="izq">' + izq + '</span>' + ing(on) + '</div>'; };
+  var filas = function(celdas, lw) { return '<div class="filas lb30" style="--lw:' + lw + '">' + celdas.join('') + '</div>'; };
+
+  var h = '<div class="p-cab"><div class="p-logo"><img src="' + LOGO + '" alt=""><b>M&amp;A REPRESENTACIONES S.R.L</b></div>' +
+    '<div class="p-tit"><b>Nota de pedido</b><b>' + (P ? 'Crédito personal' : 'Crédito de terreno') + '</b>' + c('N°', v('numero')) + '</div>' +
+    '<div class="p-meta">' + c('Fecha de entrega:', fecha(v('fecha_entrega'))) + c('Entregado:', v('entregado')) + c('Vendedor:', v('vendedor')) +
+    c('Zona:', v('zona')) + c('Sub zona:', v('sub_zona')) + '</div></div>';
+  h += '<div class="p-area' + (P ? '' : ' lejos') + '">' + c('AREA:', v('area')) + c('CIRCUITO:', v('circuito')) + '</div>';
+
+  if (P) {
+    var sits = [].concat(d.situacion || []), s = function(x) { return sits.indexOf(x) >= 0; }, dep = DEP(d), mono = MONO(d), jub = JUB(d);
+    var g = function(on) { return function(id) { return on ? v(id) : ''; }; };
+    var gd = g(dep), gm = g(mono), gj = g(jub);
+    var docCony = d.conyuge_nombre || d.conyuge_dni ? (v('conyuge_tipo_doc') + ' ' + v('conyuge_dni')).trim() : '';
+    h += filas([
+      c('Apellido y nombre titular:', v('apellido_nombre')), c('Tipo y n° de doc.:', (v('tipo_doc') + ' ' + v('dni')).trim()),
+      c('Apellido y nombre conyuge:', v('conyuge_nombre')), c('Tipo y n° de doc.:', docCony),
+      c('Domicilio particular:', v('domicilio')), c('Barrio:', v('barrio')),
+      par(c('Localidad:', v('localidad')), c('Provincia:', v('provincia')), 'libre'), c('Código Postal:', v('cp')),
+      c('Fecha de Nacimiento:', fecha(v('fecha_nac'))), c('Correo electrónico:', v('email')),
+      c('Teléfono celular:', v('tel_celular')), c('Tel. alternativo:', v('tel_fijo'))
+    ], '44mm');
+    var dt = dep ? d.dep_tipo : '';
+    h += '<div class="blk">' + band('Clientes en rel. de dep. ' + bx(dep) + ' (Permanente ' + bx(dt === 'Permanente') +
+      ' Contratado ' + bx(dt === 'Contratado') + ' Temporario ' + bx(dt === 'Temporario') + ')', dep) +
+      filas([
+        c('Empresa (Empleador):', gd('dep_empresa')), c('Ramo:', gd('dep_ramo')),
+        c('Función:', gd('dep_funcion')), c('Antigüedad:', gd('dep_antiguedad')),
+        par(c('Domicilio:', gd('dep_domicilio')), c('N°', gd('dep_numero'), 'ang')), par(c('Depto:', gd('dep_depto')), c('Piso:', '', 'ang')),
+        c('Localidad:', gd('dep_localidad')), c('Código Postal:', gd('dep_cp')),
+        c('Teléfono laboral:', gd('dep_telefono')), c('Contacto:', gd('dep_contacto'))
+      ], '34mm') + '</div>';
+    h += '<div class="blk">' + band('Monotributistas ' + bx(s('Monotributista')) + '<span class="sep"></span><span class="sep"></span>R. Inscriptos ' + bx(s('Responsable inscripto')), mono) +
+      filas([
+        c('CUIT:', gm('cuit')), par(c('Categoría:', gm('categoria')), c('Fecha insc.:', mono ? fecha(v('fecha_insc')) : '', 'mid')),
+        c('Rubro comercial:', gm('com_rubro')), c('Nombre comercio:', gm('com_nombre')),
+        c('Dirección comercio:', gm('com_direccion')), c('Barrio:', gm('com_barrio')),
+        c('Localidad:', gm('com_localidad')), c('Provincia:', gm('com_provincia')),
+        cH('Dimensiones comercio:', dims(gm('com_largo'), gm('com_ancho'))), cH('El local del comercio es:', local(gm('com_local'))),
+        c('Antigüedad comercio:', gm('com_antiguedad')), c('Teléfono del comercio:', gm('com_telefono'))
+      ], '34mm') + '</div>';
+    h += '<div class="blk">' + band('Jubilado ' + bx(s('Jubilado')) + '<span class="sep"></span><span class="sep"></span>Pensionado ' + bx(s('Pensionado')), jub) +
+      filas([
+        c('N° Beneficiario:', gj('jub_beneficio')), c('Antigüedad:', gj('jub_antiguedad')),
+        c('Banco donde cobra:', gj('jub_banco')), c('Sucursal:', gj('jub_sucursal'))
+      ], '34mm') + '</div>';
+  } else {
+    h += '<div class="regla"></div>' + filas([
+      c('Apellido y Nombre:', v('apellido_nombre')), c('Barrio:', v('barrio')),
+      c('D.N.I.:', v('dni')), c('Localidad:', v('localidad')),
+      c('Nacionalidad:', v('nacionalidad')), c('Provincia:', v('provincia')),
+      c('Estado Civil:', v('estado_civil')), c('Teléfono fijo:', v('tel_fijo')),
+      c('Nombre del cónyuge:', v('conyuge_nombre')), c('Teléfono Celular:', v('tel_celular')),
+      c('D.N.I. cónyuge:', v('conyuge_dni')), cH('La vivienda que habita:', local(v('vivienda'))),
+      c('Dir. particular:', v('domicilio')), c('Cant. grupo familiar:', v('grupo_familiar'))
+    ], '36mm') + '<div class="regla"></div>';
+    h += '<div class="blk">' + band('Clientes M&amp;A ' + bx(d.cliente_mya), true) +
+      filas([
+        c('Rubro comercial:', v('com_rubro')), c('Nombre del comercio:', v('com_nombre')),
+        c('Dirección del comercio:', v('com_direccion')), c('Barrio:', v('com_barrio')),
+        c('Localidad:', v('com_localidad')), c('Provincia:', v('com_provincia')),
+        c('Teléfono del comercio:', v('com_telefono')), cH('Dimensión del comercio:', dims(v('com_largo'), v('com_ancho'))),
+        cH('El local del comercio es:', local(v('com_local'))), c('Antigüedad comercio:', v('com_antiguedad'))
+      ], '39mm') + '</div>';
+  }
+
+  var canales = d.canal || [];
+  h += '<div class="canal">Canal de venta:' + CANALES.map(function(o, i) { return '<span>' + bx(canales.indexOf(o) >= 0) + esc(CANALES_PAPEL[i]) + '</span>'; }).join('') + '</div>';
+
+  var prods = d.productos.filter(function(p) { return p.producto || p.codigo; });
+  var filasP = prods.map(function(p) {
+    var st = subtotal(p, prods.length);
+    return '<tr><td>' + esc(p.codigo) + '</td><td class="r">' + esc(p.cant) + '</td><td>' + esc(p.producto) + '</td><td class="r">' + (String(p.precio || '').trim() ? fmtN(money(p.precio)) : '') +
+      '</td><td class="r">' + (st === null ? '' : fmtN(st)) + '</td></tr>';
+  });
+  while (filasP.length < FILAS_PAPEL) filasP.push('<tr><td></td><td></td><td></td><td></td><td></td></tr>');
+  h += '<div class="p-tw"><table class="p-prod"><thead><tr><th style="width:15%">Código</th><th style="width:9%">Cant.</th><th>Producto</th><th style="width:12.5%">Prec. Unit</th><th style="width:13%">Subtotal</th></tr></thead><tbody>' +
+    filasP.join('') + '</tbody><tfoot><tr>' +
+    (P ? '<td colspan="3" class="vacio"></td>' : '<td colspan="3" class="cs">Cuota ' + FRECUENCIAS.map(function(o) { return '<span' + (o === d.frecuencia ? '' : ' class="tach"') + '>' + o + '</span>'; }).join(' / ') + ': $ ' + m('monto_cuota') + '</td>') +
+    '<td class="tl">Total: $</td><td class="r">' + fmtN(t.total) + '</td></tr></tfoot></table>' +
+    '<div class="agua" aria-hidden="true">No válido como recibo de pago.</div></div>';
+
+  h += '<div class="p-cond">' + cH('Condición de venta: ' + bx(d.anticipo_si) + 'ANTICIPO: $', d.anticipo_si ? fmtN(t.anticipo) : '') +
+    '<div>' + c('N° de CUOTA:', v('cuotas'), '') + c('MONTO DE LA CUOTA: $', m('monto_cuota')) + '</div>' +
+    c('SALDO: $', fmtN(t.saldo)) + '</div>';
+  h += '<div class="p-nv"><span class="t">No válido como recibo de pago.</span><div class="p-fecha"><span>NOTA DE PEDIDO O VENTA</span>' + c('Fecha:', fecha(v('fecha'))) + '</div></div>';
+
+  if (P) {
+    h += '<div class="p-gastos"><h3>Gastos y recargos vigentes</h3><table>' +
+      '<tr><td class="tc">Gastos administrativos</td><td>Costos c/IVA</td><td>Período de cargo</td><td>Tipo de cargo</td></tr>' +
+      '<tr><td class="txt">' + esc(TXT_GASTO) + '</td><td>$ ' + m('gasto_admin') + '</td><td>Mensual</td><td>Obligatorio</td></tr>' +
+      '<tr><td class="tc">Seguro de saldo deudor (planes con y sin interés)</td><td>Costos c/IVA</td><td>Período de cargo</td><td>Tipo de cargo</td></tr>' +
+      '<tr><td class="txt">' + esc(TXT_SEGURO) + '</td><td>3% del saldo deudor</td><td>Mensual</td><td>Obligatorio</td></tr></table></div>';
+  }
+  h += '<div class="p-pie"><div class="p-marg"><b>MÁRGENES ASIGNADOS</b><div class="g"><span>COMPRA</span><span>CUOTA</span></div>' +
+    '<div class="g val"><span>$ ' + m('margen_compra') + '</span><span>$ ' + m('margen_cuota') + '</span></div></div>' +
+    '<div class="p-acepto"><div>ACEPTO LA VERACIDAD DE LOS DATOS INFORMADOS</div><div class="lineas"><span>Firma</span><span>Aclaración</span><span>D.N.I.</span></div></div></div>';
+  return h;
+}
+
+// ---------- Eventos ----------
+form.addEventListener('input', function(e) {
+  if (e.target.matches('[data-money]')) formatearMonto(e.target);
+  var w = e.target.closest('.f.invalid'); if (w) { w.classList.remove('invalid'); e.target.removeAttribute('aria-invalid'); }
+  var td = e.target.closest('td.invalid'); if (td) { td.classList.remove('invalid'); e.target.removeAttribute('aria-invalid'); }
+  actualizar(); guardar();
+});
+form.addEventListener('change', function() { actualizar(); guardar(); });
+form.addEventListener('click', function(e) {
+  if (e.target.closest('#btn-add-prod')) { $('[data-k=codigo]', agregarFila()).focus(); guardar(); return; }
+  var x = e.target.closest('.btn-ico');
+  if (!x) return;
+  var tr = x.closest('tr');
+  if ($$('#prod-body tr').length === 1) $$('input', tr).forEach(function(i) { i.value = i.dataset.k === 'cant' ? '1' : ''; });
+  else tr.remove();
+  actualizar(); guardar();
+});
+form.addEventListener('submit', function(e) { e.preventDefault(); });
+$('#errores').addEventListener('click', function(e) {
+  var a = e.target.closest('[data-ir]'); if (!a) return;
+  e.preventDefault();
+  var el = document.getElementById(a.dataset.ir); if (!el) return;
+  el.scrollIntoView({block:'center'}); el.focus({preventScroll:true});
+});
+$$('.tabs button').forEach(function(b) {
+  b.addEventListener('click', function() {
+    if (b.dataset.tipo === tipo) return;
+    store.set(clave(), datos());
+    tipo = b.dataset.tipo; store.set('nota-tipo', tipo);
+    render(); window.scrollTo(0, 0);
+  });
+});
+// La rueda del mouse sobre un número con foco lo cambiaba sin querer: se suelta el foco
+document.addEventListener('wheel', function(e) {
+  if (e.target.type === 'number' && e.target === document.activeElement) e.target.blur();
+}, {passive:true});
+function nombreArchivo(d) {
+  return ('Nota credito ' + tipo + ' ' + (d.numero || '') + ' - ' + (d.apellido_nombre || '')).replace(/[\\/:*?"<>|]/g, '').replace(/\s+/g, ' ').trim();
+}
+function prepararHoja(d) {
+  registrar(d);
+  $('#hoja').className = tipo === 'personal' ? 'compacto' : '';
+  $('#hoja').innerHTML = hojaHtml(d);
+  // Esperar a que el logo esté decodificado: si no, sale el recuadro vacío
+  return Promise.all($$('#hoja img').map(function(img) { return img.decode ? img.decode().catch(function() {}) : null; }))
+    .then(function() { return document.fonts ? document.fonts.ready : null; });
+}
+function generarPdf() {
+  var d = datos(), titulo = document.title;
+  prepararHoja(d).then(function() {
+    document.title = nombreArchivo(d);
+    window.print(); document.title = titulo;
+  });
+}
+
+// PNG: le graba 300 dpi (chunk pHYs) para que al imprimir salga exactamente en A4
+var CRC = (function() {
+  var t = [];
+  for (var n = 0; n < 256; n++) { var c = n; for (var k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; }
+  return t;
+})();
+function crc32(b) { var c = 0xFFFFFFFF; for (var i = 0; i < b.length; i++) c = CRC[(c ^ b[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+function pngConDpi(png, dpi) {
+  var ppm = Math.round(dpi / 0.0254), ch = new Uint8Array(21), v = new DataView(ch.buffer);
+  v.setUint32(0, 9); ch.set([112, 72, 89, 115], 4);  // "pHYs"
+  v.setUint32(8, ppm); v.setUint32(12, ppm); ch[16] = 1;  // 1 = metros
+  v.setUint32(17, crc32(ch.subarray(4, 17)));
+  var fin = 33, out = new Uint8Array(png.length + ch.length);  // firma (8) + IHDR (25)
+  out.set(png.subarray(0, fin)); out.set(ch, fin); out.set(png.subarray(fin), fin + ch.length);
+  return out;
+}
+function descargar(blob, nombre) {
+  var url = URL.createObjectURL(blob), a = document.createElement('a');
+  a.href = url; a.download = nombre; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function() { URL.revokeObjectURL(url); }, 10000);
+}
+var A4_ANCHO_PX = 2480;  // A4 a 300 dpi: 2480 × 3508
+function generarPng() {
+  var d = datos(), hoja = $('#hoja'), aviso = $('#generando'), y = window.scrollY;
+  aviso.hidden = false;
+  prepararHoja(d).then(function() {
+    hoja.classList.add('captura');
+    window.scrollTo(0, 0);
+    var r = hoja.getBoundingClientRect();
+    return html2canvas(hoja, {scale:A4_ANCHO_PX / r.width, backgroundColor:'#ffffff', logging:false,
+      width:r.width, height:r.height, windowWidth:Math.max(document.documentElement.clientWidth, Math.ceil(r.width))});
+  }).then(function(canvas) {
+    return new Promise(function(ok, mal) { canvas.toBlob(function(b) { b ? ok(b) : mal(new Error('toBlob vacío')); }, 'image/png'); });
+  }).then(function(blob) {
+    return new Response(blob).arrayBuffer();
+  }).then(function(buf) {
+    descargar(new Blob([pngConDpi(new Uint8Array(buf), 300)], {type:'image/png'}), nombreArchivo(d) + '.png');
+    toast('Imagen A4 descargada');
+  }).catch(function(e) {
+    console.error(e);
+    toast('No se pudo generar la imagen. Probá con PDF / Imprimir.');
+  }).then(function() {
+    hoja.classList.remove('captura'); aviso.hidden = true; window.scrollTo(0, y);
+  });
+}
+
+var dlgFormato = $('#dlg-formato');
+function generar() {
+  if (!validar()) { toast('No se puede generar la nota: revisá la lista de arriba.'); return; }
+  // en celular se sugiere la imagen; en la compu, el PDF
+  var movil = window.matchMedia('(pointer:coarse)').matches || window.innerWidth <= 640;
+  var pref = movil ? $('#fmt-png') : $('#fmt-pdf'), otro = movil ? $('#fmt-pdf') : $('#fmt-png');
+  pref.classList.add('pref'); otro.classList.remove('pref');
+  pref.parentNode.insertBefore(pref, pref.parentNode.firstChild);
+  dlgFormato.showModal(); pref.focus();
+}
+$('#btn-imprimir').addEventListener('click', generar);
+$('#btn-imprimir-2').addEventListener('click', generar);
+$('#fmt-png').addEventListener('click', function() { dlgFormato.close(); generarPng(); });
+$('#fmt-pdf').addEventListener('click', function() { dlgFormato.close(); generarPdf(); });
+$('#fmt-cancelar').addEventListener('click', function() { dlgFormato.close(); });
+
+var dlgNotas = $('#dlg-notas');
+function listarNotas() {
+  var h = historial();
+  $('#notas-lista').innerHTML = !h.length
+    ? '<p class="notas-vacio">Todavía no se imprimió ninguna nota en esta computadora. Cuando imprimas una, aparece acá.</p>'
+    : '<table class="notas-tabla"><thead><tr><th>Tipo</th><th>N°</th><th>Cliente</th><th>Fecha</th><th class="r">Total</th><th><span class="sr">Acciones</span></th></tr></thead><tbody>' +
+      h.map(function(n, i) {
+        return '<tr><td>' + (n.tipo === 'personal' ? 'Personal' : 'Terreno') + '</td><td>' + esc(n.numero) + '</td><td>' + esc(n.cliente) + '</td><td>' + esc(fecha(n.fecha)) +
+          '</td><td class="r">' + fmt(n.total || 0) + '</td><td class="r"><button type="button" class="btn btn-sec" data-abrir="' + i + '">Abrir</button> ' +
+          '<button type="button" class="btn btn-sec" data-duplicar="' + i + '">Duplicar</button></td></tr>';
+      }).join('') + '</tbody></table>';
+}
+function abrirNota(i, duplicar) {
+  var n = historial()[i]; if (!n) return;
+  var d = JSON.parse(JSON.stringify(n.datos));
+  if (duplicar) {
+    // mismo cliente, venta nueva: se vacían número, entrega, productos y condición
+    ['numero','fecha_entrega','entregado','anticipo_si','anticipo','cuotas','monto_cuota','margen_compra','margen_cuota'].forEach(function(k) { d[k] = ''; });
+    d.fecha = hoyIso(); d.productos = [];
+  }
+  tipo = n.tipo; store.set('nota-tipo', tipo);
+  store.set(clave(), d);
+  render();
+  if (duplicar) setVal('numero', siguienteNumero());
+  store.set(clave(), datos());
+  dlgNotas.close(); window.scrollTo(0, 0);
+  toast(duplicar ? 'Datos del cliente copiados. Cargá productos y condición de venta.' : 'Nota N° ' + n.numero + ' abierta');
+}
+$('#btn-notas').addEventListener('click', function() { listarNotas(); dlgNotas.showModal(); });
+$('#dlg-notas-cerrar').addEventListener('click', function() { dlgNotas.close(); });
+$('#notas-lista').addEventListener('click', function(e) {
+  var b = e.target.closest('[data-abrir],[data-duplicar]'); if (!b) return;
+  abrirNota(+(b.dataset.abrir || b.dataset.duplicar), 'duplicar' in b.dataset);
+});
+var dlg = $('#dlg-nueva');
+$('#btn-nueva').addEventListener('click', function() { dlg.showModal(); });
+$('#dlg-cancelar').addEventListener('click', function() { dlg.close(); });
+$('#dlg-confirmar').addEventListener('click', function() {
+  store.del(clave()); dlg.close(); render(); window.scrollTo(0, 0);
+  $('#guardado').textContent = '';
+  toast('Nota nueva lista para completar');
+});
+
+render();
+})();
+</script>
+</body>
+</html>
