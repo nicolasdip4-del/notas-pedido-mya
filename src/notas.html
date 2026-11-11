@@ -270,6 +270,7 @@ dialog .btn-danger { background:#D13438; color:#fff; }
 /* Condición de venta, "no válido" y fecha */
 #hoja .p-cond { display:grid; grid-template-columns:1.25fr 1fr .85fr; gap:4mm; align-items:center; border:.7pt solid #2B3045; background:#E4E6EE; padding:1.2mm 3mm 1.8mm; margin-top:2mm; font-weight:700; font-size:8.6pt; }
 #hoja .p-cond .c { min-height:5mm; }
+#hoja .p-cond > * { min-width:0; }
 #hoja .p-cond .bx { margin-right:.8mm; }
 #hoja .p-nv { position:relative; display:flex; align-items:center; justify-content:flex-end; margin:1.5mm 0 0; min-height:7mm; }
 #hoja .p-nv .t { position:absolute; left:22mm; top:50%; font:400 19pt/1 'Gotham',sans-serif; transform:translateY(-50%) scaleX(.62); transform-origin:left center; white-space:nowrap; }
@@ -426,7 +427,9 @@ var CONDICION_CAMPOS = function(cuotaLabel) { return [
   {id:'anticipo_si', label:'Con anticipo', type:'check', s:1},
   {id:'anticipo', label:'Anticipo', type:'money', s:1, reqIf:function(d) { return !!d.anticipo_si; }, showIf:function(d) { return !!d.anticipo_si; }},
   {id:'cuotas', label:'N° de cuotas', type:'int', req:true, s:1},
-  {id:'monto_cuota', label:cuotaLabel, type:'money', req:true, s:1}
+  {id:'monto_cuota', label:cuotaLabel, type:'money', req:true, s:1},
+  {id:'lista_precio', label:'Lista de precio', s:2, ph:'Ej: Lista 1'},
+  {id:'flete', label:'Costo de flete', type:'money', s:1}
 ]; };
 var MARGENES = { id:'margenes', titulo:'Márgenes asignados', ayuda:'Lo completa quien asigna el crédito; no es obligatorio para el vendedor.', campos:[
   {id:'margen_compra', label:'Compra', type:'money', s:1},
@@ -972,9 +975,10 @@ function hojaHtml(d) {
     '<td class="tl">Total: $</td><td class="r">' + fmtN(t.total) + '</td></tr></tfoot></table>' +
     '<div class="agua" aria-hidden="true">No válido como recibo de pago.</div></div>';
 
-  h += '<div class="p-cond">' + cH('Condición de venta: ' + bx(d.anticipo_si) + 'ANTICIPO: $', d.anticipo_si ? fmtN(t.anticipo) : '') +
+  // flete y lista de precio van en los renglones libres de la caja: no suman alto (la hoja personal tiene que seguir en 1 A4)
+  h += '<div class="p-cond"><div>' + cH('Condición de venta: ' + bx(d.anticipo_si) + 'ANTICIPO: $', d.anticipo_si ? fmtN(t.anticipo) : '') + c('COSTO DE FLETE: $', m('flete')) + '</div>' +
     '<div>' + c('N° de CUOTA:', v('cuotas'), '') + c('MONTO DE LA CUOTA: $', m('monto_cuota')) + '</div>' +
-    c('SALDO: $', fmtN(t.saldo)) + '</div>';
+    '<div>' + c('SALDO: $', fmtN(t.saldo)) + c('LISTA DE PRECIO:', v('lista_precio')) + '</div></div>';
   h += '<div class="p-nv"><span class="t">No válido como recibo de pago.</span><div class="p-fecha"><span>NOTA DE PEDIDO O VENTA</span>' + c('Fecha:', fecha(v('fecha'))) + '</div></div>';
 
   if (P) {
@@ -1035,7 +1039,29 @@ function prepararHoja(d) {
   $('#hoja').innerHTML = hojaHtml(d);
   // Esperar a que el logo esté decodificado: si no, sale el recuadro vacío
   return Promise.all($$('#hoja img').map(function(img) { return img.decode ? img.decode().catch(function() {}) : null; }))
-    .then(function() { return document.fonts ? document.fonts.ready : null; });
+    .then(function() { return document.fonts ? document.fonts.ready : null; })
+    .then(ajustarTextos);
+}
+// Nombres y direcciones largos: en vez de cortarlos con "…", se achica la letra hasta que entren;
+// si ni así entran, pasan a dos renglones. Se mide con la hoja visible (fuera de pantalla).
+function ajustarTextos() {
+  var hoja = $('#hoja'), estaba = hoja.classList.contains('captura');
+  hoja.classList.add('captura');
+  $$('.v', hoja).forEach(function(el) {
+    if (el.querySelector('.ops, .dims') || !el.textContent.trim()) return;
+    var desborda = function() { return el.scrollWidth > el.clientWidth + 1; };
+    if (!desborda()) return;
+    var base = parseFloat(getComputedStyle(el).fontSize), f = base, min = base * 0.7;
+    var caja = el.closest('.c') || el, alto0 = caja.offsetHeight;
+    while (desborda() && f > min) { f -= 0.25; el.style.fontSize = f + 'px'; }
+    if (!desborda()) return;
+    // dos renglones con interlineado justo: entran en el alto del renglón original, la hoja no crece
+    el.style.whiteSpace = 'normal'; el.style.overflowWrap = 'anywhere'; el.style.textOverflow = 'clip'; el.style.lineHeight = '1';
+    f = base * 0.85; el.style.fontSize = f + 'px';
+    var masDeDos = function() { return el.scrollHeight > 2 * f + 4 || desborda() || caja.offsetHeight > alto0; };
+    while (masDeDos() && f > base * 0.5) { f -= 0.25; el.style.fontSize = f + 'px'; }
+  });
+  if (!estaba) hoja.classList.remove('captura');
 }
 function generarPdf() {
   var d = datos(), titulo = document.title;
@@ -1124,7 +1150,7 @@ function abrirNota(i, duplicar) {
   var d = JSON.parse(JSON.stringify(n.datos));
   if (duplicar) {
     // mismo cliente, venta nueva: se vacían número, entrega, productos y condición
-    ['numero','fecha_entrega','entregado','anticipo_si','anticipo','cuotas','monto_cuota','margen_compra','margen_cuota'].forEach(function(k) { d[k] = ''; });
+    ['numero','fecha_entrega','entregado','anticipo_si','anticipo','cuotas','monto_cuota','lista_precio','flete','margen_compra','margen_cuota'].forEach(function(k) { d[k] = ''; });
     d.fecha = hoyIso(); d.productos = [];
   }
   tipo = n.tipo; store.set('nota-tipo', tipo);
