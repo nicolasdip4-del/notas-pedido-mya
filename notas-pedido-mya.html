@@ -665,7 +665,7 @@ function seccionHtml(s) {
   if (s.tipo === 'productos') {
     var req = ' <span class="req-mark" aria-hidden="true">*</span>';
     h += '<div class="prod-wrap"><table class="prod"><thead><tr><th class="w-cod">Código' + req + '</th><th class="w-cant">Cant.' + req + '</th><th>Producto' + req + '</th>' +
-      '<th class="w-pu r">Precio unit.' + (creditoTerreno() ? '' : req) + '</th><th class="w-sub r">Subtotal</th><th class="w-x"><span class="sr">Quitar</span></th></tr></thead>' +
+      '<th class="w-pu r">' + (creditoTerreno() ? 'Precio final (opcional)' : 'Precio unit.' + req) + '</th><th class="w-sub r">Subtotal</th><th class="w-x"><span class="sr">Quitar</span></th></tr></thead>' +
       '<tbody id="prod-body"></tbody><tfoot><tr><td colspan="4" class="r" id="prod-total-lbl">Total</td><td class="r tot" id="prod-total">$ 0</td><td></td></tr></tfoot></table></div>' +
       '<button type="button" class="btn btn-add" id="btn-add-prod">' + ICO_MAS + 'Agregar producto</button>' +
       '<p class="prod-err" id="prod-err"></p>';
@@ -724,7 +724,7 @@ function datos() {
   });
   d.productos = $$('#prod-body tr').map(function(tr) {
     return { codigo:$('[data-k=codigo]', tr).value.trim(), cant:$('[data-k=cant]', tr).value.trim(),
-             producto:$('[data-k=producto]', tr).value.trim(), precio:creditoTerreno() ? '' : $('[data-k=precio]', tr).value.trim() };
+             producto:$('[data-k=producto]', tr).value.trim(), precio:$('[data-k=precio]', tr).value.trim() };
   });
   return d;
 }
@@ -742,10 +742,9 @@ function agregarFila(p) {
     '<td><input data-k="codigo" aria-label="Código" value="' + esc(p.codigo) + '"></td>' +
     '<td><input data-k="cant" type="number" min="1" step="1" inputmode="numeric" aria-label="Cantidad" value="' + esc(p.cant || '1') + '"></td>' +
     '<td><input data-k="producto" aria-label="Producto" value="' + esc(p.producto) + '"></td>' +
-    // en crédito de terreno el precio no se usa: el total sale de anticipo + cuotas
-    (creditoTerreno()
-      ? '<td><input data-k="precio" type="text" disabled placeholder="No se usa" aria-label="Precio unitario (no se usa en crédito de terreno)" value=""></td>'
-      : '<td><div class="money"><input data-k="precio" data-money type="text" inputmode="decimal" placeholder="0" aria-label="Precio unitario" value="' + esc(normalizarMonto(p.precio)) + '"></div></td>') +
+    // en crédito de terreno el precio final por producto es opcional (útil con 2 o más productos); el total sigue saliendo de anticipo + cuotas
+    '<td><div class="money"><input data-k="precio" data-money type="text" inputmode="decimal" placeholder="' + (creditoTerreno() ? 'Opcional' : '0') +
+      '" aria-label="' + (creditoTerreno() ? 'Precio final (opcional)' : 'Precio unitario') + '" value="' + esc(normalizarMonto(p.precio)) + '"></div></td>' +
     '<td class="r sub">$ 0</td>' +
     '<td><button type="button" class="btn-ico" aria-label="Quitar producto" title="Quitar producto">' + ICO_X + '</button></td>';
   $('#prod-body').appendChild(tr);
@@ -760,9 +759,8 @@ function totales(d) {
   var total = d.productos.reduce(function(s, p) { return s + num(p.cant) * money(p.precio); }, 0);
   return {total:total, anticipo:anticipo, saldo:Math.max(total - anticipo, 0), enCuotas:enCuotas};
 }
-// Subtotal de una fila: en crédito de terreno con más de un producto no se calcula (lo define el vendedor en el total)
-function subtotal(p, cargados) {
-  if (creditoTerreno() && cargados > 1) return null;
+// Subtotal de una fila: cantidad × precio, solo si se cargó precio (en crédito de terreno es opcional)
+function subtotal(p) {
   return String(p.precio || '').trim() ? num(p.cant) * money(p.precio) : null;
 }
 
@@ -774,9 +772,8 @@ function actualizar() {
     if (c.showIf) w.hidden = !c.showIf(d);
     if (c.reqIf) { var m = $('.req-if', w); if (m) m.hidden = !c.reqIf(d); }
   });
-  var cargados = d.productos.filter(function(p) { return p.producto || p.codigo; }).length;
   $$('#prod-body tr').forEach(function(tr, i) {
-    var st = subtotal(d.productos[i], cargados);
+    var st = subtotal(d.productos[i]);
     $('.sub', tr).textContent = st === null ? '—' : fmt(st);
   });
   var t = totales(d);
@@ -983,7 +980,7 @@ function hojaHtml(d) {
 
   var prods = d.productos.filter(function(p) { return p.producto || p.codigo; });
   var filasP = prods.map(function(p) {
-    var st = subtotal(p, prods.length);
+    var st = subtotal(p);
     return '<tr><td>' + esc(p.codigo) + '</td><td class="r">' + esc(p.cant) + '</td><td>' + esc(p.producto) + '</td><td class="r">' + (String(p.precio || '').trim() ? fmtN(money(p.precio)) : '') +
       '</td><td class="r">' + (st === null ? '' : fmtN(st)) + '</td></tr>';
   });
